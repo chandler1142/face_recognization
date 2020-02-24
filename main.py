@@ -1,14 +1,12 @@
 import multiprocessing as mp
 import os
+from multiprocessing import Pool
+from multiprocessing import Process
 
 import cv2
 from config.paths import video_path, image_origin, image_ali, csv_dir_indiv, vector_path
 
 from detector import Detector
-from multiprocessing import Pool
-import csv
-import multiprocessing as mp
-from multiprocessing import Process
 
 
 def init():
@@ -60,10 +58,11 @@ def main():
                 if record == 180:
                     break
             video_writer.release()
-            print("End recoding...")
+            print("End recording...")
             # 录制结束，就可以通知异步线程去抽取特征样本了
+            lock = mp.Lock()
             p = Process(target=detector.extract_user_vectors,
-                        args=(user_name, user_video_path, image_origin, image_ali))
+                        args=(user_name, user_video_path, image_origin, image_ali, lock))
             p.start()
         if cv2.waitKey(40) & 0xFF == 27:
             cv2.destroyAllWindows()

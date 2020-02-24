@@ -1,4 +1,5 @@
 import csv
+import os
 
 import cv2
 import dlib
@@ -9,8 +10,10 @@ import torchvision.transforms as transforms
 from PIL import Image
 from config.paths import csv_dir_indiv, vector_path
 from imutils import face_utils
+from sklearn.externals import joblib
+from sklearn.neighbors import KNeighborsClassifier
 from torch.autograd import Variable
-import os
+
 from openface_pytorch import netOpenFace
 
 model = './models/shape_predictor_68_face_landmarks.dat'
@@ -128,6 +131,37 @@ class Detector(object):
             index += 1
 
         print("extract images finished...")
+        return dir
+
+    def __train(self, user_name, csv_path):
+        X_train, Y_train = self.__generate_dataset(user_name, csv_path)
+        knn = KNeighborsClassifier(n_neighbors=5, algorithm='ball_tree')
+        knn.fit(X_train, Y_train)
+        joblib.dump(knn, './models/knn.model')
+        print("train finished...")
+
+    def __generate_dataset(self, user_name, csv_path):
+        x_train = []
+        y_train = []
+
+        rf = open(csv_path, 'r')
+        reader = list(csv.reader(rf))
+        counter = 0
+        for k in reader:
+            if counter > 0:
+                read_path = k[3]
+                data = self.__falttern(read_path)
+                x_train.append(data)
+                y_train.append(user_name)
+            else:
+                pass
+            counter += 1
+        return x_train, y_train
+
+    def __falttern(self, path):
+        vector = np.load(path)
+        result = vector.flatten()
+        return result
 
     def __to_np(self, x):
         return x.data.cpu().numpy()
@@ -137,8 +171,10 @@ class Detector(object):
             x = x.cuda()
         return Variable(x)
 
-    def extract_user_vectors(self, user_name, user_video_path, image_origin, image_ali):
+    def extract_user_vectors(self, user_name, user_video_path, image_origin, image_ali, lock):
         print("start to extract_user_vectors...")
+        lock.acquire()
         self.__prepare_images(user_name, user_video_path, image_origin, image_ali)
-        self.__extract_from_images(user_name)
-        # train()
+        csv_path = self.__extract_from_images(user_name)
+        self.__train(user_name, csv_path)
+        lock.release()
