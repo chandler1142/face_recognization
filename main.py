@@ -6,7 +6,7 @@ from multiprocessing import Process
 import cv2
 from config.paths import video_path, image_origin, image_ali, csv_dir_indiv, vector_path
 
-from detector import Detector
+from register import Register
 
 
 def init():
@@ -30,7 +30,7 @@ def main():
 
     p = Pool(processes=mp.cpu_count())
 
-    detector = Detector()
+    register = Register()
 
     video_capture = cv2.VideoCapture(0)
     while video_capture.isOpened():
@@ -61,7 +61,7 @@ def main():
             print("End recording...")
             # 录制结束，就可以通知异步线程去抽取特征样本了
             lock = mp.Lock()
-            p = Process(target=detector.extract_user_vectors,
+            p = Process(target=register.extract_user_vectors,
                         args=(user_name, user_video_path, image_origin, image_ali, lock))
             p.start()
         if cv2.waitKey(40) & 0xFF == 27:

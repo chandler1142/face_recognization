@@ -29,10 +29,10 @@ transform = transforms.Compose([
 ])
 
 
-class Detector(object):
+class Register(object):
 
     def __init__(self):
-        super(Detector, self).__init__()
+        super(Register, self).__init__()
 
     def __write_basic_csv_data(self, user_name, basic_csv_data):
         dir = csv_dir_indiv + '/' + str(user_name) + '.csv'
