@@ -1,5 +1,7 @@
 .idea
 **/__pycache__/
-data/images/**
+data/images_ali/**
+data/images_ori/**
+data/vec/**
 data/videos/**
 data/csv/**

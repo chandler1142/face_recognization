@@ -2,13 +2,14 @@ import multiprocessing as mp
 import os
 
 import cv2
-from config.paths import video_path, image_origin, image_ali, csv_dir_indiv
+from config.paths import video_path, image_origin, image_ali, csv_dir_indiv, vector_path
 
 from detector import Detector
 from multiprocessing import Pool
 import csv
 import multiprocessing as mp
 from multiprocessing import Process
+
 
 def init():
     print("Prepare running env...")
@@ -21,6 +22,8 @@ def init():
         os.mkdir(os.path.join(image_ali))
     if not os.path.exists(os.path.join(csv_dir_indiv)):
         os.mkdir(os.path.join(csv_dir_indiv))
+    if not os.path.exists(os.path.join(vector_path)):
+        os.mkdir(os.path.join(vector_path))
 
 
 def main():
@@ -28,7 +31,6 @@ def main():
     print("Current host contains cores: ", mp.cpu_count())
 
     p = Pool(processes=mp.cpu_count())
-    print(mp.cpu_count())
 
     detector = Detector()
 
@@ -60,7 +62,8 @@ def main():
             video_writer.release()
             print("End recoding...")
             # 录制结束，就可以通知异步线程去抽取特征样本了
-            p = Process(target=detector.extract_user_vectors, args=(user_name, user_video_path, image_origin, image_ali))
+            p = Process(target=detector.extract_user_vectors,
+                        args=(user_name, user_video_path, image_origin, image_ali))
             p.start()
         if cv2.waitKey(40) & 0xFF == 27:
             cv2.destroyAllWindows()
