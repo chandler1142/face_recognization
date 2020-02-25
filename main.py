@@ -45,6 +45,7 @@ def main():
     video_capture = cv2.VideoCapture(0)
     while video_capture.isOpened():
         ret, frame = video_capture.read()
+
         # 识别
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         b_box = []
@@ -74,13 +75,15 @@ def main():
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(frame, name, (x, y), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 0), 1, True)
 
-        if len(rects) <= 0:
-            continue
+        # if len(rects) <= 0:
+        #     continue
 
-        print("Frame=" + str(frame_index) + "---" + name)
+            print("Frame=" + str(frame_index) + "---" + name)
+
         Intro = "'a' to start,'ESC' to quit"
         cv2.putText(frame, Intro, (40, 40), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (0, 0, 255), 0, True)
         cv2.imshow("Rec Recoginition", frame)
+
         total_e = time.time()
         print("total=", total_e - total_s)
 
