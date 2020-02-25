@@ -133,29 +133,31 @@ class Register(object):
         print("extract images finished...")
         return dir
 
-    def __train(self, user_name, csv_path):
-        X_train, Y_train = self.__generate_dataset(user_name, csv_path)
+    def __train(self):
+        X_train, Y_train = self.__generate_dataset(csv_dir_indiv)
         knn = KNeighborsClassifier(n_neighbors=5, algorithm='ball_tree')
         knn.fit(X_train, Y_train)
         joblib.dump(knn, './models/knn.model')
         print("train finished...")
 
-    def __generate_dataset(self, user_name, csv_path):
+    def __generate_dataset(self, csv_dir_indiv):
         x_train = []
         y_train = []
 
-        rf = open(csv_path, 'r')
-        reader = list(csv.reader(rf))
-        counter = 0
-        for k in reader:
-            if counter > 0:
-                read_path = k[3]
-                data = self.__falttern(read_path)
-                x_train.append(data)
-                y_train.append(user_name)
-            else:
-                pass
-            counter += 1
+        for root, dirs, files in os.walk(csv_dir_indiv):
+            for f in files:
+                rf = open(os.path.join(root, f), 'r')
+                reader = list(csv.reader(rf))
+                counter = 0
+                for k in reader:
+                    if counter > 0:
+                        read_path = k[3]
+                        data = self.__falttern(read_path)
+                        x_train.append(data)
+                        y_train.append(f.title().split(".")[0])
+                    else:
+                        pass
+                    counter += 1
         return x_train, y_train
 
     def __falttern(self, path):
@@ -183,7 +185,7 @@ class Register(object):
         print("start to extract_user_vectors...")
         self.__prepare_images(user_name, user_video_path, image_origin, image_ali)
         csv_path = self.__extract_from_images(user_name)
-        self.__train(user_name, csv_path)
+        self.__train()
 
     def clean_data(self, user_name, user_video_path, image_origin, image_ali):
         pass
