@@ -33,6 +33,7 @@ class Register(object):
 
     def __init__(self):
         super(Register, self).__init__()
+        self.facenet = self.__prepare_openface()
 
     def __write_basic_csv_data(self, user_name, basic_csv_data):
         dir = csv_dir_indiv + '/' + str(user_name) + '.csv'
@@ -95,7 +96,6 @@ class Register(object):
 
     def __extract_from_images(self, user_name):
         dir = csv_dir_indiv + '/' + str(user_name) + '.csv'
-        facenet = self.__prepare_openface()
         with open(dir, 'r', ) as rf:
             reader = list(csv.reader(rf))
             num = len(reader)
@@ -109,7 +109,7 @@ class Register(object):
             img_pil = Image.open(image_ali_path)
             img_tensor = transform(img_pil)
             img_tensor = self.__to_var(img_tensor)
-            outputs = facenet(img_tensor.unsqueeze(0))
+            outputs = self.facenet(img_tensor.unsqueeze(0))
 
             if index < 10:
                 vector_temp = vector_path + '/' + user_name + '_000' + str(index) + '.npy'
@@ -171,6 +171,14 @@ class Register(object):
             x = x.cuda()
         return Variable(x)
 
+    def to_np(self, x):
+        return x.data.cpu().numpy()
+
+    def to_var(self, x):
+        if torch.cuda.is_available():
+            x = x.cuda()
+        return Variable(x)
+
     def extract_user_vectors(self, user_name, user_video_path, image_origin, image_ali, lock):
         print("start to extract_user_vectors...")
         lock.acquire()
@@ -178,3 +186,11 @@ class Register(object):
         csv_path = self.__extract_from_images(user_name)
         self.__train(user_name, csv_path)
         lock.release()
+
+    def knn_classifier(self, input, knn_path):
+        knn = joblib.load(knn_path)
+
+        prob = knn.predict_proba(input)
+        pred = knn.predict(input)
+        # print(max(distance[0][0]),pred)
+        return pred, prob
