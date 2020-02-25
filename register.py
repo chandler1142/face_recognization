@@ -179,13 +179,14 @@ class Register(object):
             x = x.cuda()
         return Variable(x)
 
-    def extract_user_vectors(self, user_name, user_video_path, image_origin, image_ali, lock):
+    def extract_user_vectors(self, user_name, user_video_path, image_origin, image_ali):
         print("start to extract_user_vectors...")
-        lock.acquire()
         self.__prepare_images(user_name, user_video_path, image_origin, image_ali)
         csv_path = self.__extract_from_images(user_name)
         self.__train(user_name, csv_path)
-        lock.release()
+
+    def clean_data(self, user_name, user_video_path, image_origin, image_ali):
+        pass
 
     def knn_classifier(self, input, knn_path):
         knn = joblib.load(knn_path)

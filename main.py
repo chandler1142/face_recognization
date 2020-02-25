@@ -93,26 +93,19 @@ def main():
             user_video_path = video_path + "/" + user_name + ".avi"
             video_writer = cv2.VideoWriter(user_video_path, cv2.VideoWriter_fourcc(*'MJPG'), 30.,
                                            (frame.shape[1], frame.shape[0]))
-            cv2.putText(frame, "shake your head, wait 10 seconds to quit", (40, 40), cv2.FONT_HERSHEY_TRIPLEX, 0.5,
-                        (255, 0, 0), 0, True)
             while True:
                 record += 1
-                ret, frame = video_capture.read()
                 video_writer.write(frame)
-                cv2.putText(frame, "shake your head, wait 10 seconds to quit", (40, 40), cv2.FONT_HERSHEY_TRIPLEX, 0.5,
-                            (255, 0, 0), 0, True)
-                cv2.imshow('Capture', frame)
+                # cv2.putText(frame, "shake your head, wait 10 seconds to quit", (40, 40), cv2.FONT_HERSHEY_TRIPLEX, 0.5,
+                #             (255, 0, 0), 0, True)
+                # cv2.imshow('Capture', frame)
                 cv2.waitKey(1)
                 if record == 180:
                     break
             video_writer.release()
             print("End recording...")
             # 录制结束，就可以通知异步线程去抽取特征样本了
-            lock = mp.Lock()
-            # p = Process(target=register.extract_user_vectors,
-            #             args=(user_name, user_video_path, image_origin, image_ali, lock))
-            # p.start()
-            register.extract_user_vectors(user_name, user_video_path, image_origin, image_ali, lock)
+            register.extract_user_vectors(user_name, user_video_path, image_origin, image_ali)
         if cv2.waitKey(40) & 0xFF == 27:
             cv2.destroyAllWindows()
             break
