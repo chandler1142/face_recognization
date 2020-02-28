@@ -64,7 +64,17 @@ class Register(object):
         capture = cv2.VideoCapture(user_video_path)
         counter = 0
         basic_csv_data = []
-        while counter < 10:
+
+        image_origin_dir = image_origin + '/' + user_name
+        image_ali_dir = image_ali + '/' + user_name
+
+        if not os.path.exists(os.path.join(image_origin_dir)):
+            os.mkdir(os.path.join(image_origin_dir))
+
+        if not os.path.exists(os.path.join(image_ali_dir)):
+            os.mkdir(os.path.join(image_ali_dir))
+
+        while counter < 50:
             ret, frame = capture.read()
 
             if frame is None or len(frame) <= 0:
@@ -77,14 +87,14 @@ class Register(object):
                 faceAligned = fa.align(frame, gray, rect)
                 ali_path, ori_path = "", ""
                 if counter < 10:
-                    ori_path = image_origin + '/' + user_name + '_000' + str(counter) + '.jpg'
-                    ali_path = image_ali + '/' + user_name + '_000' + str(counter) + '.jpg'
+                    ori_path = image_origin_dir + '/' + user_name + '_000' + str(counter) + '.jpg'
+                    ali_path = image_ali_dir + '/' + user_name + '_000' + str(counter) + '.jpg'
                 elif 10 <= counter < 100:
-                    ori_path = image_origin + '/' + user_name + '_00' + str(counter) + '.jpg'
-                    ali_path = image_ali + '/' + user_name + '_00' + str(counter) + '.jpg'
+                    ori_path = image_origin_dir + '/' + user_name + '_00' + str(counter) + '.jpg'
+                    ali_path = image_ali_dir + '/' + user_name + '_00' + str(counter) + '.jpg'
                 elif 100 <= counter < 1000:
-                    ori_path = image_origin + '/' + user_name + '_0' + str(counter) + '.jpg'
-                    ali_path = image_ali + '/' + user_name + '_0' + str(counter) + '.jpg'
+                    ori_path = image_origin_dir + '/' + user_name + '_0' + str(counter) + '.jpg'
+                    ali_path = image_ali_dir + '/' + user_name + '_0' + str(counter) + '.jpg'
                 cv2.imwrite(ali_path, faceAligned)
                 counter += 1
                 print("Captured image : " + user_name + str(counter))
@@ -100,7 +110,7 @@ class Register(object):
             num = len(reader)
         index = 0
         for row in reader:
-            # row ['9', './data/images_ori//ZhaoWei_0009.jpg', './data/images_ali//ZhaoWei_0009.jpg', 'Null']
+            # row ['9', './data/images_ori/ZhaoWei/ZhaoWei_0009.jpg', './data/images_ali/ZhaoWei/ZhaoWei_0009.jpg', 'Null']
             image_ali_path = row[2]
 
             img_pil = Image.open(image_ali_path)
@@ -108,16 +118,21 @@ class Register(object):
             img_tensor = to_var(img_tensor)
             outputs = self.facenet(img_tensor.unsqueeze(0))
 
+            vector_dir = vector_path + '/' + user_name
+
+            if not os.path.exists(os.path.join(vector_dir)):
+                os.mkdir(os.path.join(vector_dir))
+
             if index < 10:
-                vector_temp = vector_path + '/' + user_name + '_000' + str(index) + '.npy'
+                vector_temp = vector_dir + '/' + user_name + '_000' + str(index) + '.npy'
                 np.save(vector_temp, to_np(outputs[0]))
 
             elif 10 <= index < 100:
-                vector_temp = vector_path + '/' + user_name + '_00' + str(index) + '.npy'
+                vector_temp = vector_dir + '/' + user_name + '_00' + str(index) + '.npy'
                 np.save(vector_temp, to_np(outputs[0]))
 
             elif 100 <= index < 1000:
-                vector_temp = vector_path + '/' + user_name + '_0' + str(index) + '.npy'
+                vector_temp = vector_dir + '/' + user_name + '_0' + str(index) + '.npy'
                 np.save(vector_temp, to_np(outputs[0]))
 
             row[3] = vector_temp
@@ -137,8 +152,35 @@ class Register(object):
     def extract_user_vectors(self, user_name, user_video_path, image_origin, image_ali):
         print("start to extract_user_vectors...")
         self.__prepare_images(user_name, user_video_path, image_origin, image_ali)
-        csv_path = self.__extract_from_images(user_name)
+        self.__extract_from_images(user_name)
         self.__train()
 
     def clean_data(self, user_name, user_video_path, image_origin, image_ali):
         pass
+
+
+def init_unknown():
+    basic_csv_data = []
+    counter = 1
+    for root, dirs, files in os.walk("./data/images_ali"):
+        for f in files:
+            image_ali_path = os.path.join(root, f)
+            vector_path = "./data/vec/Unknown/Unknown"
+            if counter < 10:
+                vector_path += '_000' + str(counter) + '.npy'
+            elif 10 <= counter < 100:
+                vector_path += '_00' + str(counter) + '.npy'
+            elif 100 <= counter < 1000:
+                vector_path += '_0' + str(counter) + '.npy'
+            basic_csv_data.append((counter, image_ali_path, image_ali_path, vector_path))
+            counter += 1
+    dir = './data/csv/Unknown.csv'
+    if os.path.exists(dir):
+        os.remove(dir)
+    with open(dir, 'a', newline='') as wf1:
+        writer1 = csv.writer(wf1)
+        writer1.writerows(basic_csv_data)
+
+
+if __name__ == '__main__':
+    init_unknown()
