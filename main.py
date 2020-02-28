@@ -96,11 +96,18 @@ def main():
             user_video_path = video_path + "/" + user_name + ".avi"
             video_writer = cv2.VideoWriter(user_video_path, cv2.VideoWriter_fourcc(*'MJPG'), 30.,
                                            (frame.shape[1], frame.shape[0]))
+
             while True:
+                ret, frame = video_capture.read()
+
+                Intro = "Shake your head"
+                cv2.putText(frame, Intro, (40, 40), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (0, 0, 255), 0, True)
+                cv2.imshow("Rec Recoginition", frame)
+
                 record += 1
                 video_writer.write(frame)
                 cv2.waitKey(1)
-                if record == 180:
+                if record == 300:
                     break
             video_writer.release()
             print("End recording...")
