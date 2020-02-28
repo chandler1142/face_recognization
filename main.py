@@ -6,12 +6,15 @@ from multiprocessing import Process
 import cv2
 from config.paths import video_path, image_origin, image_ali, csv_dir_indiv, vector_path
 
+from knn_model import knn_classifier
 from register import Register, transform
 import dlib
 from imutils import face_utils
 from PIL import Image
 
 import time
+
+from utils import to_var, to_np
 
 
 def init():
@@ -62,21 +65,18 @@ def main():
 
             # /---compute vectors and do KNN---/
             img_tensor = transform(pil_im)
-            img_tensor = register.to_var(img_tensor)
+            img_tensor = to_var(img_tensor)
             outputs_128, outputs_726 = register.facenet(img_tensor.unsqueeze(0))
-            outputs = register.to_np(outputs_128)
+            outputs = to_np(outputs_128)
 
             outputs = outputs.flatten().reshape(1, -1)
 
-            pred, prob = register.knn_classifier(outputs, './models/knn.model')
+            pred, prob = knn_classifier(outputs, './models/knn.model')
 
             name = pred[0]
             b_box.append(((x, y), (x + w, y + h), name))
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(frame, name, (x, y), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 0), 1, True)
-
-        # if len(rects) <= 0:
-        #     continue
 
             print("Frame=" + str(frame_index) + "---" + name)
 
@@ -99,9 +99,6 @@ def main():
             while True:
                 record += 1
                 video_writer.write(frame)
-                # cv2.putText(frame, "shake your head, wait 10 seconds to quit", (40, 40), cv2.FONT_HERSHEY_TRIPLEX, 0.5,
-                #             (255, 0, 0), 0, True)
-                # cv2.imshow('Capture', frame)
                 cv2.waitKey(1)
                 if record == 180:
                     break

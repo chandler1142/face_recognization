@@ -10,11 +10,10 @@ import torchvision.transforms as transforms
 from PIL import Image
 from config.paths import csv_dir_indiv, vector_path
 from imutils import face_utils
-from sklearn.externals import joblib
-from sklearn.neighbors import KNeighborsClassifier
-from torch.autograd import Variable
 
+from knn_model import knn_train
 from openface_pytorch import netOpenFace
+from utils import to_np, to_var
 
 model = './models/shape_predictor_68_face_landmarks.dat'
 detector = dlib.get_frontal_face_detector()
@@ -99,29 +98,27 @@ class Register(object):
         with open(dir, 'r', ) as rf:
             reader = list(csv.reader(rf))
             num = len(reader)
-
         index = 0
-
         for row in reader:
             # row ['9', './data/images_ori//ZhaoWei_0009.jpg', './data/images_ali//ZhaoWei_0009.jpg', 'Null']
             image_ali_path = row[2]
 
             img_pil = Image.open(image_ali_path)
             img_tensor = transform(img_pil)
-            img_tensor = self.__to_var(img_tensor)
+            img_tensor = to_var(img_tensor)
             outputs = self.facenet(img_tensor.unsqueeze(0))
 
             if index < 10:
                 vector_temp = vector_path + '/' + user_name + '_000' + str(index) + '.npy'
-                np.save(vector_temp, self.__to_np(outputs[0]))
+                np.save(vector_temp, to_np(outputs[0]))
 
             elif 10 <= index < 100:
                 vector_temp = vector_path + '/' + user_name + '_00' + str(index) + '.npy'
-                np.save(vector_temp, self.__to_n(outputs[0]))
+                np.save(vector_temp, to_np(outputs[0]))
 
             elif 100 <= index < 1000:
                 vector_temp = vector_path + '/' + user_name + '_0' + str(index) + '.npy'
-                np.save(vector_temp, self.__to_n(outputs[0]))
+                np.save(vector_temp, to_np(outputs[0]))
 
             row[3] = vector_temp
             with open(dir, 'w', newline='') as wf:
@@ -134,52 +131,8 @@ class Register(object):
         return dir
 
     def __train(self):
-        X_train, Y_train = self.__generate_dataset(csv_dir_indiv)
-        knn = KNeighborsClassifier(n_neighbors=5, algorithm='ball_tree')
-        knn.fit(X_train, Y_train)
-        joblib.dump(knn, './models/knn.model')
+        knn_train()
         print("train finished...")
-
-    def __generate_dataset(self, csv_dir_indiv):
-        x_train = []
-        y_train = []
-
-        for root, dirs, files in os.walk(csv_dir_indiv):
-            for f in files:
-                rf = open(os.path.join(root, f), 'r')
-                reader = list(csv.reader(rf))
-                counter = 0
-                for k in reader:
-                    if counter > 0:
-                        read_path = k[3]
-                        data = self.__falttern(read_path)
-                        x_train.append(data)
-                        y_train.append(f.title().split(".")[0])
-                    else:
-                        pass
-                    counter += 1
-        return x_train, y_train
-
-    def __falttern(self, path):
-        vector = np.load(path)
-        result = vector.flatten()
-        return result
-
-    def __to_np(self, x):
-        return x.data.cpu().numpy()
-
-    def __to_var(self, x):
-        if torch.cuda.is_available():
-            x = x.cuda()
-        return Variable(x)
-
-    def to_np(self, x):
-        return x.data.cpu().numpy()
-
-    def to_var(self, x):
-        if torch.cuda.is_available():
-            x = x.cuda()
-        return Variable(x)
 
     def extract_user_vectors(self, user_name, user_video_path, image_origin, image_ali):
         print("start to extract_user_vectors...")
@@ -189,11 +142,3 @@ class Register(object):
 
     def clean_data(self, user_name, user_video_path, image_origin, image_ali):
         pass
-
-    def knn_classifier(self, input, knn_path):
-        knn = joblib.load(knn_path)
-
-        prob = knn.predict_proba(input)
-        pred = knn.predict(input)
-        # print(max(distance[0][0]),pred)
-        return pred, prob
