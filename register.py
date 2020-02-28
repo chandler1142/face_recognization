@@ -74,7 +74,7 @@ class Register(object):
         if not os.path.exists(os.path.join(image_ali_dir)):
             os.mkdir(os.path.join(image_ali_dir))
 
-        while counter < 100:
+        while counter < 10:
             ret, frame = capture.read()
 
             if frame is None or len(frame) <= 0:

@@ -107,12 +107,17 @@ def main():
                 record += 1
                 video_writer.write(frame)
                 cv2.waitKey(1)
-                if record == 300:
+                if record == 180:
                     break
             video_writer.release()
             print("End recording...")
             # 录制结束，就可以通知异步线程去抽取特征样本了
-            register.extract_user_vectors(user_name, user_video_path, image_origin, image_ali)
+
+            import threading
+            # register.extract_user_vectors(user_name, user_video_path, image_origin, image_ali)
+
+            t = threading.Thread(target=register.extract_user_vectors, args=(user_name, user_video_path, image_origin, image_ali))
+            t.start()
         if cv2.waitKey(40) & 0xFF == 27:
             cv2.destroyAllWindows()
             break
